@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tom & Jerry Capture Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+
+        body { 
+            background-color: #ffecb3; 
+            text-align: center; 
+            font-family: 'Luckiest Guy', cursive;
+        }
+
+        h1 {
+            color: #ff4500;
+            text-shadow: 2px 2px 4px black;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            font-size: 28px;
+            color: #ff4500;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px black;
+        }
+
+        #game-container {
+            width: 1000px;
+            height: 500px;
+            position: relative;
+            margin: 50px auto 20px;
+            background: url('container-bg.jpg') no-repeat center;
+            background-size: cover;
+            border: 8px solid black;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+            cursor: none;
+        }
+
+        .cursor {
+            width: 70px;  
+            height: 70px;
+            position: absolute;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease-in-out;
+        }
+
+        #game-over {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 36px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px black;
+        }
+
+        #restart-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        #restart-btn:hover {
+            background-color: #d83400;
+            transform: scale(1.1);
+        }
+		 footer {
+            text-align: center;
+            padding: 10px;
+            background: #333;
+            color: white;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tom & Jerry Capture Game</h1>
+    <div id="score">Score: 0 sec</div>
+    <div id="game-container">
+        <img src="cursor-1.png" class="cursor" id="cursor1">
+        <img src="cursor-02.png" class="cursor" id="cursor2">
+        <div id="game-over">Game Over! Tom caught Jerry!</div>
+    </div>
+	<footer>
+        Tom & Jarry Capture Game  |  created by Thotapalli Vishnu Siva Manohar  |  HTML/CSS/JS Code 
+    </footer>
+    <center><button id="restart-btn" onclick="restartGame()">Start Again</button></center>
+
+    <script>
+const cursor1 = document.getElementById('cursor1'); 
+const cursor2 = document.getElementById('cursor2'); 
+const gameContainer = document.getElementById('game-container');
+const restartBtn = document.getElementById('restart-btn');
+const gameOverMessage = document.getElementById('game-over');
+const scoreDisplay = document.getElementById('score');
+
+let cursor1X, cursor1Y, cursor2X, cursor2Y;
+const speed = 5;
+let keys = {}; 
+let gameRunning = false;
+let gameStarted = false;
+const cursorSize = 40; 
+
+let startTime, timerInterval;
+
+function resetPositions() {
+    cursor1X = gameContainer.clientWidth / 4;
+    cursor1Y = gameContainer.clientHeight / 2;
+    cursor2X = (gameContainer.clientWidth / 4) * 3;
+    cursor2Y = gameContainer.clientHeight / 2;
+
+    updateCursors();
+}
+
+function updateCursors() {
+    cursor1.style.left = `${cursor1X}px`;
+    cursor1.style.top = `${cursor1Y}px`;
+    cursor2.style.left = `${cursor2X}px`;
+    cursor2.style.top = `${cursor2Y}px`;
+}
+
+function checkCollision() {
+    const dx = cursor1X - cursor2X;
+    const dy = cursor1Y - cursor2Y;
+    return Math.sqrt(dx * dx + dy * dy) < cursorSize;
+}
+
+function startTimer() {
+    if (gameStarted) return; 
+    gameStarted = true;
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+        let elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        scoreDisplay.textContent = `Score: ${elapsedTime} sec`;
+    }, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+}
+
+// Listen for key events
+document.addEventListener('keydown', (e) => { 
+    keys[e.key.toLowerCase()] = true;
+    if (!gameStarted) startTimer(); 
+});
+
+document.addEventListener('keyup', (e) => { 
+    delete keys[e.key.toLowerCase()];
+});
+
+// Ensure gameLoop runs continuously
+function gameLoop() {
+    if (!gameRunning) return;
+
+    let moved = false;
+
+    // Cursor 1 (Arrow Keys - Tom)
+    if (keys["arrowup"] && cursor1Y > 0) { cursor1Y -= speed; moved = true; }
+    if (keys["arrowdown"] && cursor1Y < gameContainer.clientHeight - cursorSize) { cursor1Y += speed; moved = true; }
+    if (keys["arrowleft"] && cursor1X > 0) { cursor1X -= speed; moved = true; }
+    if (keys["arrowright"] && cursor1X < gameContainer.clientWidth - cursorSize) { cursor1X += speed; moved = true; }
+
+    // Cursor 2 (WASD - Jerry)
+    if (keys["w"] && cursor2Y > 0) { cursor2Y -= speed; moved = true; }
+    if (keys["s"] && cursor2Y < gameContainer.clientHeight - cursorSize) { cursor2Y += speed; moved = true; }
+    if (keys["a"] && cursor2X > 0) { cursor2X -= speed; moved = true; }
+    if (keys["d"] && cursor2X < gameContainer.clientWidth - cursorSize) { cursor2X += speed; moved = true; }
+
+    updateCursors();
+
+    if (checkCollision()) {
+        gameRunning = false;
+        stopTimer();
+        gameOverMessage.style.display = "block";
+        restartBtn.style.display = "block"; 
+    }
+
+    requestAnimationFrame(gameLoop); // Ensure loop keeps running
+}
+
+function restartGame() {
+    gameRunning = true;
+    gameStarted = false; 
+    keys = {}; 
+    gameOverMessage.style.display = "none";
+    restartBtn.style.display = "none";
+    scoreDisplay.textContent = "Score: 0 sec"; 
+    resetPositions();
+    gameLoop();
+}
+
+// Start game loop immediately
+gameRunning = true;
+resetPositions();
+gameLoop();
+
+    </script>
+
+</body>
+</html>
